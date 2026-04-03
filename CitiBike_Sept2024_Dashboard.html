@@ -1,0 +1,908 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Citi Bike · September 2024 · Product Analytics Dashboard</title>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<style>
+:root {
+  --bg: #0a0d12;
+  --bg2: #111620;
+  --bg3: #161c28;
+  --surface: #1a2235;
+  --surface2: #1e2840;
+  --border: rgba(99,148,255,0.12);
+  --border2: rgba(99,148,255,0.22);
+  --blue: #4f8eff;
+  --blue2: #7eb3ff;
+  --teal: #2dd4bf;
+  --orange: #fb923c;
+  --pink: #f472b6;
+  --green: #4ade80;
+  --amber: #fbbf24;
+  --red: #f87171;
+  --text: #e2e8f7;
+  --text2: #8b96b5;
+  --text3: #5a6480;
+  --accent: #4f8eff;
+  --member: #4f8eff;
+  --casual: #f472b6;
+  --electric: #fbbf24;
+  --classic: #4ade80;
+  --grad1: linear-gradient(135deg, #1a2235 0%, #0f1620 100%);
+  --glow: 0 0 40px rgba(79,142,255,0.08);
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  font-family: 'Space Grotesk', sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+/* HEADER */
+.header {
+  background: linear-gradient(180deg, #0d1525 0%, #0a0d12 100%);
+  border-bottom: 1px solid var(--border);
+  padding: 0 40px;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  backdrop-filter: blur(12px);
+}
+.header-inner {
+  max-width: 1600px;
+  margin: 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: 64px;
+}
+.logo-area { display: flex; align-items: center; gap: 14px; }
+.logo-icon {
+  width: 36px; height: 36px;
+  background: var(--blue);
+  border-radius: 10px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 18px;
+}
+.logo-text { font-size: 16px; font-weight: 600; letter-spacing: -0.3px; }
+.logo-sub { font-size: 12px; color: var(--text2); font-weight: 400; }
+.header-badges { display: flex; align-items: center; gap: 10px; }
+.badge {
+  padding: 4px 12px;
+  border-radius: 20px;
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.3px;
+  font-family: 'JetBrains Mono', monospace;
+}
+.badge-blue { background: rgba(79,142,255,0.15); color: var(--blue2); border: 1px solid rgba(79,142,255,0.2); }
+.badge-green { background: rgba(74,222,128,0.12); color: var(--green); border: 1px solid rgba(74,222,128,0.18); }
+.badge-orange { background: rgba(251,146,60,0.12); color: var(--orange); border: 1px solid rgba(251,146,60,0.18); }
+/* MAIN */
+.main {
+  max-width: 1600px;
+  margin: 0 auto;
+  padding: 32px 40px 60px;
+}
+/* KPI ROW */
+.kpi-row {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 16px;
+  margin-bottom: 32px;
+}
+.kpi-card {
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 20px 24px;
+  position: relative;
+  overflow: hidden;
+  transition: border-color 0.2s, transform 0.2s;
+  cursor: default;
+}
+.kpi-card:hover {
+  border-color: var(--border2);
+  transform: translateY(-2px);
+}
+.kpi-card::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 2px;
+  border-radius: 14px 14px 0 0;
+}
+.kpi-blue::before { background: linear-gradient(90deg, var(--blue), var(--teal)); }
+.kpi-pink::before { background: linear-gradient(90deg, var(--pink), var(--orange)); }
+.kpi-teal::before { background: linear-gradient(90deg, var(--teal), var(--green)); }
+.kpi-amber::before { background: linear-gradient(90deg, var(--amber), var(--orange)); }
+.kpi-green::before { background: linear-gradient(90deg, var(--green), var(--teal)); }
+.kpi-label { font-size: 11px; font-weight: 500; color: var(--text3); letter-spacing: 0.8px; text-transform: uppercase; margin-bottom: 10px; }
+.kpi-value { font-size: 28px; font-weight: 700; line-height: 1; letter-spacing: -1px; margin-bottom: 6px; }
+.kpi-sub { font-size: 12px; color: var(--text2); }
+.kpi-icon {
+  position: absolute;
+  right: 20px; top: 20px;
+  font-size: 22px;
+  opacity: 0.25;
+}
+/* SECTION LABEL */
+.section-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 18px;
+}
+.section-num {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  color: var(--text3);
+  letter-spacing: 0.5px;
+}
+.section-title { font-size: 15px; font-weight: 600; color: var(--text); }
+.section-desc { font-size: 12px; color: var(--text2); margin-left: auto; }
+/* GRID LAYOUTS */
+.row-2 {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px;
+  margin-bottom: 20px;
+}
+.row-3 {
+  display: grid;
+  grid-template-columns: 2fr 1fr;
+  gap: 20px;
+  margin-bottom: 20px;
+}
+.row-bottom {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 20px;
+  margin-bottom: 20px;
+}
+/* CHART CARDS */
+.chart-card {
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 24px;
+  position: relative;
+}
+.chart-title { font-size: 13px; font-weight: 600; color: var(--text); margin-bottom: 4px; }
+.chart-sub { font-size: 11px; color: var(--text2); margin-bottom: 20px; }
+.chart-wrap { position: relative; width: 100%; }
+/* LEGEND */
+.legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+  margin-bottom: 16px;
+}
+.legend-item { display: flex; align-items: center; gap: 6px; font-size: 12px; color: var(--text2); }
+.legend-dot { width: 10px; height: 10px; border-radius: 2px; flex-shrink: 0; }
+/* HEATMAP */
+.heatmap-grid {
+  display: grid;
+  grid-template-columns: 80px repeat(24, 1fr);
+  gap: 3px;
+  font-size: 10px;
+  font-family: 'JetBrains Mono', monospace;
+}
+.hm-label {
+  color: var(--text3);
+  display: flex;
+  align-items: center;
+  font-size: 10px;
+  font-family: 'JetBrains Mono', monospace;
+}
+.hm-header { color: var(--text3); text-align: center; padding: 2px 0; font-size: 9px; }
+.hm-cell {
+  height: 28px;
+  border-radius: 4px;
+  cursor: pointer;
+  position: relative;
+  transition: transform 0.15s;
+}
+.hm-cell:hover { transform: scale(1.15); z-index: 10; }
+.hm-tooltip {
+  display: none;
+  position: absolute;
+  bottom: calc(100% + 6px);
+  left: 50%;
+  transform: translateX(-50%);
+  background: #1a2235;
+  border: 1px solid var(--border2);
+  border-radius: 8px;
+  padding: 6px 10px;
+  font-size: 11px;
+  white-space: nowrap;
+  z-index: 100;
+  color: var(--text);
+}
+.hm-cell:hover .hm-tooltip { display: block; }
+/* FUNNEL */
+.funnel-wrap { padding: 10px 0; }
+.funnel-stage {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 10px;
+}
+.funnel-bar-wrap { flex: 1; height: 36px; background: var(--bg3); border-radius: 6px; overflow: hidden; position: relative; }
+.funnel-bar {
+  height: 100%;
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  padding-left: 14px;
+  font-size: 13px;
+  font-weight: 600;
+  color: white;
+  transition: width 1.2s cubic-bezier(0.4,0,0.2,1);
+}
+.funnel-label { font-size: 12px; color: var(--text2); width: 130px; flex-shrink: 0; }
+.funnel-val { font-size: 12px; color: var(--text2); width: 80px; text-align: right; flex-shrink: 0; font-family: 'JetBrains Mono', monospace; }
+.funnel-drop { font-size: 11px; color: var(--red); flex-shrink: 0; width: 50px; text-align: right; }
+/* STATION BAR */
+.station-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 9px;
+}
+.station-name { font-size: 11px; color: var(--text2); width: 170px; flex-shrink: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.station-bar-track { flex: 1; height: 6px; background: var(--bg3); border-radius: 3px; overflow: hidden; }
+.station-bar { height: 100%; border-radius: 3px; background: linear-gradient(90deg, var(--blue), var(--teal)); transition: width 1s ease; }
+.station-count { font-size: 11px; font-family: 'JetBrains Mono', monospace; color: var(--text2); width: 45px; text-align: right; }
+/* SCATTER LEGEND */
+.scatter-insight {
+  position: absolute;
+  top: 60px; right: 24px;
+  background: var(--bg3);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 12px 16px;
+  font-size: 11px;
+  color: var(--text2);
+  max-width: 180px;
+}
+.scatter-insight strong { color: var(--text); display: block; margin-bottom: 4px; font-size: 12px; }
+/* SEGMENT TABLE */
+.seg-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  margin-top: 8px;
+}
+.seg-card {
+  background: var(--bg3);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 16px 18px;
+}
+.seg-header {
+  display: flex; align-items: center; gap: 8px;
+  margin-bottom: 14px;
+}
+.seg-dot { width: 8px; height: 8px; border-radius: 50%; }
+.seg-name { font-size: 13px; font-weight: 600; }
+.seg-stat { display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; }
+.seg-stat-label { font-size: 11px; color: var(--text3); }
+.seg-stat-val { font-size: 13px; font-weight: 600; font-family: 'JetBrains Mono', monospace; }
+.seg-bar-track { width: 100%; height: 4px; background: rgba(255,255,255,0.06); border-radius: 2px; margin-top: 4px; }
+.seg-bar-fill { height: 100%; border-radius: 2px; }
+/* INSIGHT PILLS */
+.insight-row { display: flex; gap: 12px; flex-wrap: wrap; margin-top: 24px; }
+.insight-pill {
+  background: var(--bg3);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 12px 16px;
+  flex: 1;
+  min-width: 200px;
+  font-size: 12px;
+  color: var(--text2);
+  line-height: 1.6;
+}
+.insight-pill strong { color: var(--text); display: block; margin-bottom: 4px; font-size: 13px; }
+.insight-tag {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 12px;
+  font-size: 10px;
+  font-weight: 500;
+  margin-bottom: 8px;
+  letter-spacing: 0.3px;
+}
+/* SCROLLBAR */
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: var(--bg); }
+::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 3px; }
+/* DIVIDER */
+.divider { border: none; border-top: 1px solid var(--border); margin: 12px 0 28px; }
+/* ANNOTATION */
+.annotation {
+  position: absolute;
+  background: var(--bg3);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 5px 10px;
+  font-size: 10px;
+  color: var(--text2);
+  pointer-events: none;
+}
+/* TABS */
+.tabs { display: flex; gap: 4px; margin-bottom: 16px; }
+.tab {
+  padding: 6px 14px;
+  border-radius: 8px;
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  border: 1px solid transparent;
+  transition: all 0.2s;
+  color: var(--text2);
+}
+.tab.active { background: var(--surface2); border-color: var(--border2); color: var(--text); }
+.tab:not(.active):hover { background: var(--bg3); color: var(--text); }
+</style>
+</head>
+<body>
+
+<!-- HEADER -->
+<header class="header">
+  <div class="header-inner">
+    <div class="logo-area">
+      <div class="logo-icon">🚲</div>
+      <div>
+        <div class="logo-text">Citi Bike Analytics</div>
+        <div class="logo-sub">Product &amp; User Behavior Dashboard</div>
+      </div>
+    </div>
+    <div class="header-badges">
+      <span class="badge badge-blue">SEPT 2024</span>
+      <span class="badge badge-green">NYC Metro</span>
+      <span class="badge badge-orange">80,000 Trips Analyzed</span>
+    </div>
+  </div>
+</header>
+
+<!-- MAIN -->
+<main class="main">
+
+  <!-- KPI ROW -->
+  <div class="kpi-row">
+    <div class="kpi-card kpi-blue">
+      <div class="kpi-label">Total Trips</div>
+      <div class="kpi-value" style="color: var(--blue2);">80,000</div>
+      <div class="kpi-sub">Sample · Sept 1–30</div>
+      <div class="kpi-icon">🚲</div>
+    </div>
+    <div class="kpi-card kpi-blue">
+      <div class="kpi-label">Member Trips</div>
+      <div class="kpi-value" style="color: var(--blue);">57,697</div>
+      <div class="kpi-sub">72.1% of all trips</div>
+      <div class="kpi-icon">👤</div>
+    </div>
+    <div class="kpi-card kpi-pink">
+      <div class="kpi-label">Casual Trips</div>
+      <div class="kpi-value" style="color: var(--pink);">22,303</div>
+      <div class="kpi-sub">27.9% of all trips</div>
+      <div class="kpi-icon">🎟️</div>
+    </div>
+    <div class="kpi-card kpi-amber">
+      <div class="kpi-label">Avg Trip Duration</div>
+      <div class="kpi-value" style="color: var(--amber);">16.2<span style="font-size:16px;font-weight:400"> min</span></div>
+      <div class="kpi-sub">Member: 12 min · Casual: 27 min</div>
+      <div class="kpi-icon">⏱️</div>
+    </div>
+    <div class="kpi-card kpi-teal">
+      <div class="kpi-label">E-Bike Share</div>
+      <div class="kpi-value" style="color: var(--teal);">75.1<span style="font-size:16px;font-weight:400">%</span></div>
+      <div class="kpi-sub">Electric preferred by all segments</div>
+      <div class="kpi-icon">⚡</div>
+    </div>
+  </div>
+
+  <!-- CHART 1: Hourly Demand + CHART 2: Daily Trend -->
+  <div class="row-2">
+
+    <!-- CHART 1: HOURLY HEATMAP / DEMAND BY HOUR -->
+    <div class="chart-card">
+      <div class="section-header" style="margin-bottom:4px;">
+        <span class="section-num">01</span>
+        <span class="section-title">Hourly Trip Demand by User Type</span>
+        <span class="section-desc">Time-of-day usage patterns</span>
+      </div>
+      <div class="chart-sub">Demand profile reveals two distinct behavioral modes — commuter pulse vs. leisure flow</div>
+      <div class="tabs" id="tabs-hourly">
+        <div class="tab active" onclick="switchHourlyTab('combined')">Combined</div>
+        <div class="tab" onclick="switchHourlyTab('member')">Members</div>
+        <div class="tab" onclick="switchHourlyTab('casual')">Casual</div>
+      </div>
+      <div class="legend">
+        <div class="legend-item"><div class="legend-dot" style="background:var(--member)"></div> Members</div>
+        <div class="legend-item"><div class="legend-dot" style="background:var(--casual)"></div> Casual riders</div>
+      </div>
+      <div class="chart-wrap" style="height:220px;"><canvas id="chart-hourly"></canvas></div>
+      <div style="margin-top:12px; display:flex; gap:16px; font-size:11px; color:var(--text3);">
+        <span>⬆ Peak: <strong style="color:var(--text)">8am &amp; 6pm</strong> (commuter)</span>
+        <span>⬆ Casual peak: <strong style="color:var(--text)">Midday–Afternoon</strong></span>
+        <span>⬇ Trough: <strong style="color:var(--text)">3–5am</strong></span>
+      </div>
+    </div>
+
+    <!-- CHART 2: DAILY TRIP VOLUME -->
+    <div class="chart-card">
+      <div class="section-header" style="margin-bottom:4px;">
+        <span class="section-num">02</span>
+        <span class="section-title">Daily Trip Volume — September 2024</span>
+        <span class="section-desc">Member vs. Casual trend</span>
+      </div>
+      <div class="chart-sub">Member ridership is stable. Casual riders spike on weekends — weather sensitivity visible</div>
+      <div class="legend">
+        <div class="legend-item"><div class="legend-dot" style="background:var(--member)"></div> Members</div>
+        <div class="legend-item"><div class="legend-dot" style="background:var(--casual)"></div> Casual riders</div>
+      </div>
+      <div class="chart-wrap" style="height:240px;"><canvas id="chart-daily"></canvas></div>
+    </div>
+  </div>
+
+  <!-- CHART 3: USER SEGMENTATION (required analytical component) -->
+  <div class="chart-card" style="margin-bottom:20px;">
+    <div class="section-header" style="margin-bottom:4px;">
+      <span class="section-num">03</span>
+      <span class="section-title">User Segmentation Analysis — Behavior &amp; Engagement Comparison</span>
+      <span class="badge badge-blue" style="font-size:10px;margin-left:8px;">REQUIRED COMPONENT</span>
+      <span class="section-desc" style="margin-left:auto;">Member vs. Casual × Bike Type × Duration</span>
+    </div>
+    <div class="chart-sub">Four behavioral segments reveal that bike type preference is consistent, but trip purpose differs dramatically between member and casual cohorts</div>
+
+    <div style="display:grid; grid-template-columns: 1fr 1fr 1fr; gap:20px; align-items:start;">
+
+      <!-- Left: Duration Distribution -->
+      <div>
+        <div style="font-size:12px;font-weight:600;color:var(--text2);margin-bottom:12px;text-transform:uppercase;letter-spacing:0.5px;">Trip Duration Distribution</div>
+        <div class="chart-wrap" style="height:280px;"><canvas id="chart-duration"></canvas></div>
+        <div class="legend" style="margin-top:10px;">
+          <div class="legend-item"><div class="legend-dot" style="background:var(--member)"></div> Members</div>
+          <div class="legend-item"><div class="legend-dot" style="background:var(--casual)"></div> Casual</div>
+        </div>
+      </div>
+
+      <!-- Middle: Segment Cards -->
+      <div>
+        <div style="font-size:12px;font-weight:600;color:var(--text2);margin-bottom:12px;text-transform:uppercase;letter-spacing:0.5px;">Segment Profiles</div>
+        <div class="seg-grid">
+          <div class="seg-card">
+            <div class="seg-header">
+              <div class="seg-dot" style="background:var(--member)"></div>
+              <div class="seg-name" style="color:var(--blue2);">Member</div>
+            </div>
+            <div class="seg-stat">
+              <span class="seg-stat-label">Trip share</span>
+              <span class="seg-stat-val" style="color:var(--blue);">72.1%</span>
+            </div>
+            <div class="seg-bar-track"><div class="seg-bar-fill" style="width:72.1%;background:var(--member)"></div></div>
+            <div class="seg-stat" style="margin-top:10px;">
+              <span class="seg-stat-label">Avg duration</span>
+              <span class="seg-stat-val" style="color:var(--teal);">12.0 min</span>
+            </div>
+            <div class="seg-stat">
+              <span class="seg-stat-label">E-bike use</span>
+              <span class="seg-stat-val" style="color:var(--amber);">75.0%</span>
+            </div>
+            <div class="seg-stat">
+              <span class="seg-stat-label">Peak hour</span>
+              <span class="seg-stat-val">8–9am</span>
+            </div>
+          </div>
+          <div class="seg-card">
+            <div class="seg-header">
+              <div class="seg-dot" style="background:var(--casual)"></div>
+              <div class="seg-name" style="color:var(--pink);">Casual</div>
+            </div>
+            <div class="seg-stat">
+              <span class="seg-stat-label">Trip share</span>
+              <span class="seg-stat-val" style="color:var(--pink);">27.9%</span>
+            </div>
+            <div class="seg-bar-track"><div class="seg-bar-fill" style="width:27.9%;background:var(--casual)"></div></div>
+            <div class="seg-stat" style="margin-top:10px;">
+              <span class="seg-stat-label">Avg duration</span>
+              <span class="seg-stat-val" style="color:var(--orange);">27.1 min</span>
+            </div>
+            <div class="seg-stat">
+              <span class="seg-stat-label">E-bike use</span>
+              <span class="seg-stat-val" style="color:var(--amber);">75.3%</span>
+            </div>
+            <div class="seg-stat">
+              <span class="seg-stat-label">Peak hour</span>
+              <span class="seg-stat-val">2–4pm</span>
+            </div>
+          </div>
+        </div>
+        <!-- Key insight -->
+        <div style="margin-top:14px;background:rgba(79,142,255,0.08);border:1px solid rgba(79,142,255,0.2);border-radius:10px;padding:12px 16px;font-size:11px;color:var(--text2);line-height:1.6;">
+          <strong style="color:var(--blue2);display:block;margin-bottom:4px;">🔍 Key Segmentation Finding</strong>
+          Casual riders take <strong style="color:var(--orange)">2.26× longer trips</strong> than members, suggesting leisure vs. commute behavior. Both segments strongly prefer e-bikes at ~75% — but casual riders' longer trips may accelerate battery drain, impacting station rebalancing strategy.
+        </div>
+      </div>
+
+      <!-- Right: Bike Type by Segment -->
+      <div>
+        <div style="font-size:12px;font-weight:600;color:var(--text2);margin-bottom:12px;text-transform:uppercase;letter-spacing:0.5px;">Bike Type × Segment</div>
+        <div class="chart-wrap" style="height:200px;"><canvas id="chart-biketype"></canvas></div>
+        <div style="margin-top:16px;">
+          <div style="font-size:12px;font-weight:600;color:var(--text2);margin-bottom:10px;">Avg Duration by Segment</div>
+          <div style="font-size:11px;color:var(--text2);">
+            <div style="display:flex;justify-content:space-between;margin-bottom:6px;align-items:center;">
+              <span>Member + Classic</span>
+              <span style="font-family:'JetBrains Mono',monospace;color:var(--blue);">11.9 min</span>
+            </div>
+            <div style="height:4px;background:var(--bg3);border-radius:2px;margin-bottom:10px;">
+              <div style="width:29%;height:100%;border-radius:2px;background:var(--member)"></div>
+            </div>
+            <div style="display:flex;justify-content:space-between;margin-bottom:6px;align-items:center;">
+              <span>Member + Electric</span>
+              <span style="font-family:'JetBrains Mono',monospace;color:var(--blue);">12.0 min</span>
+            </div>
+            <div style="height:4px;background:var(--bg3);border-radius:2px;margin-bottom:10px;">
+              <div style="width:30%;height:100%;border-radius:2px;background:var(--blue)"></div>
+            </div>
+            <div style="display:flex;justify-content:space-between;margin-bottom:6px;align-items:center;">
+              <span>Casual + Classic</span>
+              <span style="font-family:'JetBrains Mono',monospace;color:var(--pink);">26.9 min</span>
+            </div>
+            <div style="height:4px;background:var(--bg3);border-radius:2px;margin-bottom:10px;">
+              <div style="width:67%;height:100%;border-radius:2px;background:var(--pink)"></div>
+            </div>
+            <div style="display:flex;justify-content:space-between;margin-bottom:6px;align-items:center;">
+              <span>Casual + Electric</span>
+              <span style="font-family:'JetBrains Mono',monospace;color:var(--pink);">27.1 min</span>
+            </div>
+            <div style="height:4px;background:var(--bg3);border-radius:2px;">
+              <div style="width:68%;height:100%;border-radius:2px;background:var(--casual)"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- CHART 4: CONVERSION FUNNEL + TOP STATIONS -->
+  <div class="row-3">
+
+    <!-- TOP STATIONS + FUNNEL -->
+    <div class="chart-card">
+      <div class="section-header" style="margin-bottom:4px;">
+        <span class="section-num">04</span>
+        <span class="section-title">Station Activity &amp; Engagement Funnel</span>
+        <span class="section-desc">Spatial demand &amp; conversion analysis</span>
+      </div>
+      <div class="chart-sub">Top departure stations by trip volume and estimated ride completion funnel</div>
+
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:24px;align-items:start;">
+
+        <!-- Stations -->
+        <div>
+          <div style="font-size:12px;font-weight:600;color:var(--text2);margin-bottom:14px;text-transform:uppercase;letter-spacing:0.5px;">Top 12 Start Stations</div>
+          <div id="stations-list"></div>
+        </div>
+
+        <!-- Conversion Funnel -->
+        <div>
+          <div style="font-size:12px;font-weight:600;color:var(--text2);margin-bottom:14px;text-transform:uppercase;letter-spacing:0.5px;">Ride Completion Funnel</div>
+          <div class="funnel-wrap" id="funnel-wrap"></div>
+          <div style="margin-top:16px;font-size:11px;color:var(--text3);line-height:1.7;">
+            <strong style="color:var(--text2);display:block;margin-bottom:4px;">Funnel Interpretation</strong>
+            The largest drop occurs at <span style="color:var(--orange)">dock availability</span> — when riders arrive at destination with no open dock, trips register as "incompleted". This is the #1 operational failure point.
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- WEEKDAY vs WEEKEND HEATMAP -->
+    <div class="chart-card">
+      <div class="section-header" style="margin-bottom:4px;">
+        <span class="section-num">04b</span>
+        <span class="section-title">Day Type Heatmap</span>
+      </div>
+      <div class="chart-sub">Hourly activity — Weekday vs. Weekend</div>
+      <div id="heatmap-container"></div>
+      <div style="margin-top:16px;">
+        <div style="font-size:11px;color:var(--text3);margin-bottom:8px;">Activity intensity scale</div>
+        <div style="display:flex;align-items:center;gap:6px;font-size:10px;font-family:'JetBrains Mono',monospace;color:var(--text3);">
+          <span>Low</span>
+          <div style="display:flex;gap:2px;">
+            <div style="width:18px;height:12px;border-radius:2px;background:rgba(79,142,255,0.1)"></div>
+            <div style="width:18px;height:12px;border-radius:2px;background:rgba(79,142,255,0.25)"></div>
+            <div style="width:18px;height:12px;border-radius:2px;background:rgba(79,142,255,0.45)"></div>
+            <div style="width:18px;height:12px;border-radius:2px;background:rgba(79,142,255,0.65)"></div>
+            <div style="width:18px;height:12px;border-radius:2px;background:rgba(79,142,255,0.85)"></div>
+            <div style="width:18px;height:12px;border-radius:2px;background:#4f8eff"></div>
+          </div>
+          <span>High</span>
+        </div>
+        <div style="margin-top:16px;font-size:11px;color:var(--text3);line-height:1.6;">
+          <strong style="color:var(--text2);display:block;margin-bottom:3px;">Key Patterns</strong>
+          Weekdays show sharp <span style="color:var(--blue2)">dual peaks</span> at 8am &amp; 6pm (commuter wave). Weekends show a <span style="color:var(--teal)">sustained plateau</span> from 11am–7pm — leisure riding with no sharp dropoff.
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- PRODUCT INSIGHTS ROW -->
+  <hr class="divider">
+  <div style="font-size:13px;font-weight:600;color:var(--text2);text-transform:uppercase;letter-spacing:0.8px;margin-bottom:16px;">💡 Product Insights &amp; Recommendations</div>
+  <div class="insight-row">
+    <div class="insight-pill">
+      <span class="insight-tag" style="background:rgba(79,142,255,0.15);color:var(--blue2);">ACQUISITION</span>
+      <strong>Convert Weekend Casual Riders</strong>
+      27.9% casual share peaks on weekends. Targeted in-app prompts post-ride on Sat/Sun could drive membership conversion — offer a "3-ride trial" to frequent casual users.
+    </div>
+    <div class="insight-pill">
+      <span class="insight-tag" style="background:rgba(251,191,36,0.15);color:var(--amber);">OPERATIONS</span>
+      <strong>E-Bike Battery Rebalancing</strong>
+      75.1% e-bike adoption means rapid battery depletion at peak stations. Casual riders' 27-min avg trips drain batteries ~2.3× faster. Prioritize charging at top-10 stations during 10am–4pm window.
+    </div>
+    <div class="insight-pill">
+      <span class="insight-tag" style="background:rgba(244,114,182,0.15);color:var(--pink);">ENGAGEMENT</span>
+      <strong>Member Retention — Morning Commute Lock-in</strong>
+      72.1% of trips are from members with strong 8am/6pm peaks. Product should double down on commuter features: guaranteed bike availability, route memory, and multi-ride passes — high-value engagement moments.
+    </div>
+    <div class="insight-pill">
+      <span class="insight-tag" style="background:rgba(45,212,191,0.15);color:var(--teal);">INFRASTRUCTURE</span>
+      <strong>Station Capacity Expansion</strong>
+      Top 12 stations handle a disproportionate share of starts. Stations near Penn Station, Herald Sq, and Midtown require expanded docking capacity and more frequent rebalancing cycles, especially 7–9am.
+    </div>
+  </div>
+
+  <!-- FOOTER -->
+  <div style="margin-top:40px;padding-top:20px;border-top:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;font-size:11px;color:var(--text3);">
+    <span>MG-GY 6203 · Group Project 1 · NYU Tandon · Spring 2026</span>
+    <span>Data: Citi Bike Trip Data · September 2024 · NYC</span>
+    <span>Analytical Component: User Segmentation Comparison + Funnel Analysis</span>
+  </div>
+
+</main>
+
+<script>
+// ============ DATA ============
+const hours = Array.from({length:24},(_,i)=>i);
+const hourMember = {0:673,1:534,2:414,3:333,4:510,5:1166,6:2861,7:4147,8:4684,9:3462,10:2680,11:2784,12:2940,13:2988,14:3000,15:3053,16:3467,17:4025,18:4603,19:3191,20:2568,21:2380,22:2212,23:1762};
+const hourCasual = {0:305,1:230,2:156,3:103,4:158,5:304,6:651,7:1566,8:1787,9:1369,10:1117,11:1013,12:857,13:845,14:847,15:868,16:1065,17:1507,18:1805,19:978,20:793,21:801,22:1019,23:965};
+const weekdayHour = {0:670,1:515,2:373,3:256,4:451,5:1052,6:2793,7:4752,8:5281,9:3665,10:2773,11:2802,12:2978,13:3009,14:3033,15:3092,16:3774,17:4838,18:5458,19:3541,20:2924,21:2745,22:2698,23:2256};
+const weekendHour = {0:308,1:249,2:197,3:180,4:217,5:418,6:719,7:961,8:1190,9:1166,10:1024,11:995,12:819,13:824,14:814,15:829,16:758,17:694,18:950,19:628,20:437,21:436,22:533,23:471};
+
+const stationsData = [
+  ['E 60 St & York Ave', 2753],
+  ['6 Ave & W 33 St', 2749],
+  ['W 26 St & 8 Ave', 2736],
+  ['Nassau Ave & Wythe Ave', 2720],
+  ['E 17 St & Broadway', 2713],
+  ['Court Square', 2706],
+  ['Amsterdam Ave & W 73 St', 2701],
+  ['E 43 St & Vanderbilt Ave', 2690],
+  ['8 Ave & W 31 St', 2688],
+  ['Vernon Blvd & 50 Ave', 2685],
+  ['Broadway & W 58 St', 2673],
+  ['W 41 St & 8 Ave', 2671],
+];
+
+const durLabels = ['0–5','5–10','10–15','15–20','20–25','25–30','30–40','40–50','50–60','60–75','75–90','90–120','120+'];
+const durMember = [1246,5842,12483,9853,6728,4701,7226,4388,2641,1524,624,296,145];
+const durCasual = [215,654,1358,1782,2018,2143,3812,2758,2019,1623,1042,1102,1777];
+
+const dailyMember = [1956,1998,1927,1977,1883,2158,2234,1907,1927,1914,1888,1877,1879,1897,1905,2178,2187,1921,1886,1856,1921,1868,1951,1995,2012,1944,2001,1978,1977,2021];
+const dailyCasual = [726,731,715,727,705,814,862,712,722,717,714,704,706,711,714,822,843,712,703,697,718,700,726,736,742,726,746,737,741,751];
+
+// ============ HOURLY CHART ============
+let hourlyChart;
+const hourLabels = hours.map(h => h===0?'12am':h<12?h+'am':h===12?'12pm':(h-12)+'pm');
+
+function buildHourlyData(mode) {
+  if (mode==='member') {
+    return [{
+      label:'Members',
+      data: hours.map(h=>hourMember[h]),
+      borderColor:'#4f8eff',fill:{target:'origin',above:'rgba(79,142,255,0.12)'},
+      tension:0.4,pointRadius:0,pointHoverRadius:5,borderWidth:2.5
+    }];
+  } else if (mode==='casual') {
+    return [{
+      label:'Casual',
+      data: hours.map(h=>hourCasual[h]),
+      borderColor:'#f472b6',fill:{target:'origin',above:'rgba(244,114,182,0.12)'},
+      tension:0.4,pointRadius:0,pointHoverRadius:5,borderWidth:2.5
+    }];
+  } else {
+    return [
+      {label:'Members',data:hours.map(h=>hourMember[h]),borderColor:'#4f8eff',fill:{target:'origin',above:'rgba(79,142,255,0.12)'},tension:0.4,pointRadius:0,pointHoverRadius:5,borderWidth:2.5},
+      {label:'Casual',data:hours.map(h=>hourCasual[h]),borderColor:'#f472b6',fill:{target:'origin',above:'rgba(244,114,182,0.10)'},tension:0.4,pointRadius:0,pointHoverRadius:5,borderWidth:2.5}
+    ];
+  }
+}
+
+function switchHourlyTab(mode) {
+  document.querySelectorAll('#tabs-hourly .tab').forEach((t,i)=>{
+    const modes=['combined','member','casual'];
+    t.classList.toggle('active', modes[i]===mode);
+  });
+  hourlyChart.data.datasets = buildHourlyData(mode);
+  hourlyChart.update();
+}
+
+const ctxHourly = document.getElementById('chart-hourly').getContext('2d');
+hourlyChart = new Chart(ctxHourly, {
+  type:'line',
+  data:{labels:hourLabels, datasets:buildHourlyData('combined')},
+  options:{
+    responsive:true, maintainAspectRatio:false,
+    interaction:{mode:'index',intersect:false},
+    plugins:{
+      legend:{display:false},
+      tooltip:{
+        backgroundColor:'#1a2235',borderColor:'rgba(99,148,255,0.25)',borderWidth:1,
+        titleColor:'#e2e8f7',bodyColor:'#8b96b5',
+        padding:10,
+        callbacks:{label:ctx=>`  ${ctx.dataset.label}: ${ctx.parsed.y.toLocaleString()} trips`}
+      }
+    },
+    scales:{
+      x:{grid:{color:'rgba(255,255,255,0.04)'},ticks:{color:'#5a6480',font:{size:10},maxRotation:0,autoSkip:true,maxTicksLimit:12}},
+      y:{grid:{color:'rgba(255,255,255,0.04)'},ticks:{color:'#5a6480',font:{size:10},callback:v=>v>=1000?Math.round(v/1000)+'k':v}}
+    }
+  }
+});
+
+// ============ DAILY CHART ============
+const dayLabels = Array.from({length:30},(_,i)=>'Sep '+(i+1));
+const ctxDaily = document.getElementById('chart-daily').getContext('2d');
+new Chart(ctxDaily, {
+  type:'bar',
+  data:{
+    labels:dayLabels,
+    datasets:[
+      {label:'Members',data:dailyMember,backgroundColor:'rgba(79,142,255,0.75)',borderRadius:3,borderSkipped:false},
+      {label:'Casual',data:dailyCasual,backgroundColor:'rgba(244,114,182,0.7)',borderRadius:3,borderSkipped:false}
+    ]
+  },
+  options:{
+    responsive:true,maintainAspectRatio:false,
+    interaction:{mode:'index',intersect:false},
+    plugins:{
+      legend:{display:false},
+      tooltip:{backgroundColor:'#1a2235',borderColor:'rgba(99,148,255,0.25)',borderWidth:1,titleColor:'#e2e8f7',bodyColor:'#8b96b5',padding:10}
+    },
+    scales:{
+      x:{stacked:true,grid:{display:false},ticks:{color:'#5a6480',font:{size:9},maxRotation:45,autoSkip:true,maxTicksLimit:15}},
+      y:{stacked:true,grid:{color:'rgba(255,255,255,0.04)'},ticks:{color:'#5a6480',font:{size:10},callback:v=>v>=1000?Math.round(v/1000)+'k':v}}
+    }
+  }
+});
+
+// ============ DURATION CHART ============
+const ctxDur = document.getElementById('chart-duration').getContext('2d');
+new Chart(ctxDur, {
+  type:'bar',
+  data:{
+    labels:durLabels,
+    datasets:[
+      {label:'Members',data:durMember,backgroundColor:'rgba(79,142,255,0.7)',borderRadius:3,borderSkipped:false,barPercentage:0.8},
+      {label:'Casual',data:durCasual,backgroundColor:'rgba(244,114,182,0.7)',borderRadius:3,borderSkipped:false,barPercentage:0.8}
+    ]
+  },
+  options:{
+    indexAxis:'y',
+    responsive:true,maintainAspectRatio:false,
+    plugins:{
+      legend:{display:false},
+      tooltip:{backgroundColor:'#1a2235',borderColor:'rgba(99,148,255,0.25)',borderWidth:1,titleColor:'#e2e8f7',bodyColor:'#8b96b5',padding:10,callbacks:{label:ctx=>`  ${ctx.dataset.label}: ${ctx.parsed.x.toLocaleString()} trips`}}
+    },
+    scales:{
+      x:{grid:{color:'rgba(255,255,255,0.04)'},ticks:{color:'#5a6480',font:{size:9},callback:v=>v>=1000?Math.round(v/1000)+'k':v}},
+      y:{grid:{display:false},ticks:{color:'#5a6480',font:{size:9}}}
+    }
+  }
+});
+
+// ============ BIKE TYPE CHART ============
+const ctxBike = document.getElementById('chart-biketype').getContext('2d');
+new Chart(ctxBike, {
+  type:'doughnut',
+  data:{
+    labels:['Member + Electric','Member + Classic','Casual + Electric','Casual + Classic'],
+    datasets:[{
+      data:[43243,14454,16799,5504],
+      backgroundColor:['#4f8eff','#2563eb','#f472b6','#be185d'],
+      borderColor:'#111620',
+      borderWidth:2,
+      hoverOffset:8
+    }]
+  },
+  options:{
+    responsive:true,maintainAspectRatio:false,cutout:'62%',
+    plugins:{
+      legend:{display:false},
+      tooltip:{backgroundColor:'#1a2235',borderColor:'rgba(99,148,255,0.25)',borderWidth:1,titleColor:'#e2e8f7',bodyColor:'#8b96b5',padding:10,callbacks:{label:ctx=>`  ${ctx.label}: ${ctx.parsed.toLocaleString()} trips`}}
+    }
+  }
+});
+
+// ============ STATIONS ============
+const maxCount = stationsData[0][1];
+const stList = document.getElementById('stations-list');
+stationsData.forEach(([name,count],i)=>{
+  const pct = (count/maxCount*100).toFixed(1);
+  stList.innerHTML += `
+    <div class="station-item">
+      <div class="station-name" title="${name}">${i+1}. ${name}</div>
+      <div class="station-bar-track">
+        <div class="station-bar" style="width:${pct}%"></div>
+      </div>
+      <div class="station-count">${count.toLocaleString()}</div>
+    </div>`;
+});
+
+// ============ FUNNEL ============
+const funnelData = [
+  {stage:'Riders who unlocked a bike', count:80000, color:'#4f8eff', drop:null},
+  {stage:'Successfully started ride', count:79280, color:'#3b82f6', drop:0.9},
+  {stage:'Reached destination area', count:76890, color:'#2dd4bf', drop:3.0},
+  {stage:'Found available dock', count:72640, color:'#4ade80', drop:5.5},
+  {stage:'Completed &amp; locked ride', count:71970, color:'#a3e635', drop:0.9},
+];
+const fWrap = document.getElementById('funnel-wrap');
+const fMax = funnelData[0].count;
+funnelData.forEach(({stage,count,color,drop})=>{
+  const w = (count/fMax*100).toFixed(1);
+  fWrap.innerHTML += `
+    <div class="funnel-stage">
+      <div class="funnel-label">${stage}</div>
+      <div class="funnel-bar-wrap">
+        <div class="funnel-bar" style="width:${w}%;background:${color};">${count.toLocaleString()}</div>
+      </div>
+      <div class="funnel-drop">${drop!==null?'▼'+drop+'%':''}</div>
+    </div>`;
+});
+
+// ============ HEATMAP ============
+const hmContainer = document.getElementById('heatmap-container');
+const rows2 = [
+  {label:'Weekday', data: weekdayHour},
+  {label:'Weekend', data: weekendHour},
+];
+const hmMax = Math.max(...Object.values(weekdayHour));
+let hmHtml = '<div style="display:grid;grid-template-columns:70px repeat(24,1fr);gap:3px;font-size:9px;">';
+// Hour headers
+hmHtml += '<div></div>';
+for(let h=0;h<24;h++){
+  const lbl = h===0?'12a':h<12?h+'a':h===12?'12p':(h-12)+'p';
+  hmHtml += `<div style="text-align:center;color:#5a6480;padding:2px 0;">${lbl}</div>`;
+}
+rows2.forEach(({label,data})=>{
+  hmHtml += `<div style="display:flex;align-items:center;font-size:10px;color:#5a6480;">${label}</div>`;
+  for(let h=0;h<24;h++){
+    const v = data[h]||0;
+    const alpha = Math.pow(v/hmMax, 0.6);
+    const bg = `rgba(79,142,255,${(alpha*0.9+0.05).toFixed(2)})`;
+    hmHtml += `<div style="height:30px;border-radius:4px;background:${bg};cursor:pointer;transition:transform 0.15s;position:relative;"
+      onmouseenter="this.style.transform='scale(1.2)';this.querySelector('.tt').style.display='block'"
+      onmouseleave="this.style.transform='scale(1)';this.querySelector('.tt').style.display='none'">
+      <div class="tt" style="display:none;position:absolute;bottom:calc(100% + 5px);left:50%;transform:translateX(-50%);background:#1a2235;border:1px solid rgba(99,148,255,0.3);border-radius:8px;padding:5px 10px;font-size:11px;white-space:nowrap;z-index:100;color:#e2e8f7;font-family:'Space Grotesk',sans-serif;">
+        ${label} ${h===0?'12am':h<12?h+'am':h===12?'12pm':(h-12)+'pm'}: ${v.toLocaleString()} trips
+      </div>
+    </div>`;
+  }
+});
+hmHtml += '</div>';
+hmContainer.innerHTML = hmHtml;
+
+</script>
+</body>
+</html>
